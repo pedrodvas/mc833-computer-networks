@@ -6,15 +6,20 @@ import time
 
 CHUNK_SIZE = 1024 #1 kilobyte per chunk
 DELAY = 0.5 #half a second
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def serve_content(connectionSocket, addr):
     print(f"new connection at {connectionSocket}: {addr}")
     filepath = "unknown"
     try:
         message = connectionSocket.recv(1024).decode()
-        filename = message.split()[1]
-        filepath = filename[1:] if filename != '/' else 'index.html'
-        full_filepath = os.path.join(r"C:\Users\pdvsp\Downloads", filepath)
+        parts = message.split()
+        if len(parts) >= 2:
+            filename = parts[1]
+            filepath = filename[1:] if filename != '/' else 'index.html'
+        else:
+            filepath = 'index.html'
+        full_filepath = os.path.abspath(os.path.join(BASE_DIR, filepath))
         with open(full_filepath, 'rb') as f:
             outputdata = f.read()
 
