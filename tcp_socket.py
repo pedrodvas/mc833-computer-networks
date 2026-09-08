@@ -1,12 +1,15 @@
-#import socket module
 from socket import *
-import sys # In order to terminate the program
 import threading
 import mimetypes
 import os
+import time
+
+CHUNK_SIZE = 1024 #1 kilobyte per chunk
+DELAY = 0.5 #half a second
 
 def serve_content(connectionSocket, addr):
     print(f"new connection at {connectionSocket}: {addr}")
+    filepath = "unknown"
     try:
         message = connectionSocket.recv(1024).decode()
         filename = message.split()[1]
@@ -24,10 +27,18 @@ def serve_content(connectionSocket, addr):
         header += "Connection: close\r\n\r\n"
         
         connectionSocket.sendall(header.encode())
-        connectionSocket.sendall(outputdata)
+
+        #connectionSocket.sendall(outputdata)
+        #solution below used just to show concurrency
+        for i in range(0, len(outputdata), CHUNK_SIZE):
+            chunk = outputdata[i:i+CHUNK_SIZE]
+            connectionSocket.sendall(chunk)
+            time.sleep(DELAY)
         connectionSocket.close()
+        print(f"envio terminado")
     except IOError:
-        body = "<html><body><h1>404 Not Found</h1></body></html>\r\n"
+        body = (f"<html><body><h1>404 Not Found</h1>"
+                f"<p>O recurso solicitado <code>/{filepath}</code> nao foi encontrado neste servidor.</p></body></html>\r\n")
         header_404 = (
             "HTTP/1.1 404 Not Found\r\n"
             "Content-Type: text/html\r\n"
